@@ -1,0 +1,24 @@
+{
+  "name": "care-banking-app",
+  "version": "1.0.0",
+  "private": true,
+  "packageManager": "pnpm@9.14.4+sha256.26a726b633b629a3fabda006f696ae4260954a3632c8054112d7ae89779e5f9a",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "tsx watch ./src/index.ts",
+    "prettier": "prettier --log-level warn --write .",
+    "prettier-check": "prettier --log-level warn --check .",
+    "ts-check": "tsc --noEmit",
+    "qa": "pnpm ts-check && pnpm prettier-check"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "prettier": "^3.4.2",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "express": "^4.21.1"
+  }
+}

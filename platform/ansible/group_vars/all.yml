@@ -1,0 +1,25 @@
+---
+# Configuration Variables
+
+# User configuration
+devops_user: devops
+ssh_public_key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL1y/P0+p5+LMCqfH6SSHGQ7xOjLQBrW6Fqvzsvq7Do4 sameedshoaib@Sameeds-MBP.fritz.box"
+
+# Firewall ports
+firewall_ports:
+  - 22    # SSH
+  - 80    # HTTP
+  - 443   # HTTPS
+  - 6443  # Kubernetes API
+  - 8080  # Jenkins
+  - 10250 # Kubelet
+  - 8888  # Docker Port
+  - 30080 # ArgoCD Web UI
+  - 30443 # ArgoCD gRPC
+
+# ArgoCD configuration
+argocd:
+  namespace: argocd
+  server_nodeport: 30080
+  grpc_nodeport: 30443
+

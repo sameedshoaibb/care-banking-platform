@@ -1,0 +1,391 @@
+---
+# Infrastructure Setup Playbook
+# Installs: Docker, Kubernetes, Helm, Jenkins, ArgoCD, Trivy, Syft
+
+- name: Setup Infrastructure
+  hosts: all
+  become: true
+  gather_facts: true
+
+  tasks:
+    # ========================================
+    # System Preparation
+    # ========================================
+    - name: Update system packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+        autoremove: yes
+
+    - name: Install essential packages
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - software-properties-common
+          - python3-pip
+        state: present
+
+    # ========================================
+    # User Setup
+    # ========================================
+    - name: Create devops user with sudo access
+      user:
+        name: "{{ devops_user }}"
+        groups: sudo
+        shell: /bin/bash
+        create_home: yes
+        state: present
+
+    - name: Configure SSH key for devops user
+      authorized_key:
+        user: "{{ devops_user }}"
+        key: "{{ ssh_public_key }}"
+        state: present
+
+    - name: Enable passwordless sudo for devops user
+      lineinfile:
+        path: /etc/sudoers.d/{{ devops_user }}
+        line: "{{ devops_user }} ALL=(ALL) NOPASSWD:ALL"
+        create: yes
+        mode: '0440'
+        validate: 'visudo -cf %s'
+
+    # ========================================
+    # Docker Installation
+    # ========================================
+    - name: Add Docker GPG key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker repository
+      apt_repository:
+        repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"
+        state: present
+
+    - name: Install Docker
+      apt:
+        name: [docker-ce, docker-ce-cli, containerd.io]
+        state: present
+        update_cache: yes
+
+    - name: Add users to docker group
+      user:
+        name: "{{ item }}"
+        groups: docker
+        append: yes
+      loop: ["{{ devops_user }}", ubuntu]
+
+    - name: Start Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    # ========================================
+    # Kubernetes Tools
+    # ========================================
+    - name: Add Kubernetes GPG key
+      apt_key:
+        url: https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key
+        state: present
+        keyring: /usr/share/keyrings/kubernetes-archive-keyring.gpg
+
+    - name: Add Kubernetes repository
+      apt_repository:
+        repo: "deb [signed-by=/usr/share/keyrings/kubernetes-archive-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.28/deb/ /"
+        state: present
+
+    - name: Install Kubernetes tools
+      apt:
+        name: [kubelet, kubeadm, kubectl]
+        state: present
+        update_cache: yes
+
+    - name: Hold Kubernetes package versions
+      dpkg_selections:
+        name: "{{ item }}"
+        selection: hold
+      loop: [kubelet, kubeadm, kubectl]
+
+    # ========================================
+    # Helm Package Manager
+    # ========================================
+    - name: Install Helm
+      shell: |
+        curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+      args:
+        creates: /usr/local/bin/helm
+
+    # ========================================
+    # Jenkins Setup
+    # ========================================
+    - name: Add Jenkins GPG key
+      apt_key:
+        url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
+        state: present
+
+    - name: Add Jenkins repository
+      apt_repository:
+        repo: "deb https://pkg.jenkins.io/debian-stable binary/"
+        state: present
+
+    - name: Install Java (Jenkins requirement)
+      apt:
+        name: openjdk-17-jdk
+        state: present
+        update_cache: yes
+
+    - name: Install Jenkins
+      apt:
+        name: jenkins
+        state: present
+
+    - name: Add jenkins to docker group
+      user:
+        name: jenkins
+        groups: docker
+        append: yes
+
+    - name: Start Jenkins service
+      systemd:
+        name: jenkins
+        state: started
+        enabled: yes
+
+    - name: Wait for Jenkins to be ready
+      wait_for:
+        port: 8080
+        timeout: 120
+
+    - name: Get Jenkins initial password
+      slurp:
+        src: /var/lib/jenkins/secrets/initialAdminPassword
+      register: jenkins_password
+      ignore_errors: yes
+
+    - name: Display Jenkins credentials
+      debug:
+        msg: |
+          Jenkins Password: {{ jenkins_password['content'] | b64decode }}
+          Jenkins URL: http://{{ ansible_host }}:8080
+      when: jenkins_password.content is defined
+
+    # ========================================
+    # Jenkins Kubernetes Access
+    # ========================================
+    - name: Grant jenkins sudo privileges
+      lineinfile:
+        path: /etc/sudoers.d/jenkins
+        line: "jenkins ALL=(ALL) NOPASSWD:ALL"
+        create: yes
+        mode: '0440'
+        validate: 'visudo -cf %s'
+
+    - name: Setup kubeconfig for jenkins
+      file:
+        path: /var/lib/jenkins/.kube
+        state: directory
+        owner: jenkins
+        group: jenkins
+        mode: '0755'
+
+    # ========================================
+    # Firewall Configuration
+    # ========================================
+    - name: Install UFW firewall
+      apt:
+        name: ufw
+        state: present
+
+    - name: Configure firewall rules
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+      loop: "{{ firewall_ports }}"
+
+    - name: Enable firewall
+      ufw:
+        state: enabled
+
+    # ========================================
+    # Kubernetes Preparation
+    # ========================================
+    - name: Disable swap for Kubernetes
+      command: swapoff -a
+      when: ansible_swaptotal_mb > 0
+
+    - name: Remove swap from fstab
+      lineinfile:
+        path: /etc/fstab
+        regexp: '^\s*([^#\s]+\s+){1}(none|swap)\s+'
+        state: absent
+
+    # ========================================
+    # Docker Verification
+    # ========================================
+    - name: Pull and run NGINX test container
+      docker_container:
+        name: nginx-test
+        image: nginx:alpine
+        state: started
+        restart_policy: unless-stopped
+        ports: ["8888:80"]
+
+    - name: Verify Docker is working
+      uri:
+        url: http://localhost:8888
+        status_code: 200
+      retries: 3
+      delay: 5
+
+    # ========================================
+    # Kubernetes Cluster Init
+    # ========================================
+    - name: Copy k8s initialization script
+      copy:
+        src: scripts/install-k8s.sh
+        dest: /tmp/install-k8s.sh
+        mode: '0755'
+
+    - name: Initialize Kubernetes cluster
+      shell: /tmp/install-k8s.sh
+      register: k8s_init
+
+    - name: Setup kubeconfig for root
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: /root/.kube/config
+        owner: root
+        group: root
+        mode: '0600'
+        remote_src: yes
+      ignore_errors: yes
+
+    # ========================================
+    # ArgoCD Installation
+    # ========================================
+    - name: Wait for Kubernetes cluster to be ready
+      shell: kubectl get nodes --no-headers=true | grep -q "Ready"
+      register: cluster_ready
+      until: cluster_ready.rc == 0
+      retries: 30
+      delay: 10
+      environment:
+        KUBECONFIG: "/root/.kube/config"
+
+    - name: Create ArgoCD namespace
+      shell: kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
+      environment:
+        KUBECONFIG: "/root/.kube/config"
+
+    - name: Install ArgoCD
+      shell: kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
+      environment:
+        KUBECONFIG: "/root/.kube/config"
+
+    - name: Wait for ArgoCD deployment
+      shell: kubectl wait --for=condition=available deployment/argocd-server -n argocd --timeout=300s
+      environment:
+        KUBECONFIG: "/root/.kube/config"
+
+    - name: Create ArgoCD NodePort service
+      copy:
+        content: |
+          apiVersion: v1
+          kind: Service
+          metadata:
+            name: argocd-server-nodeport
+            namespace: argocd
+          spec:
+            type: NodePort
+            ports:
+              - name: server
+                port: 80
+                targetPort: 8080
+                nodePort: 30080
+              - name: grpc
+                port: 443
+                targetPort: 8080
+                nodePort: 30443
+            selector:
+              app.kubernetes.io/name: argocd-server
+        dest: /tmp/argocd-nodeport.yaml
+
+    - name: Apply ArgoCD NodePort service
+      shell: kubectl apply -f /tmp/argocd-nodeport.yaml
+      environment:
+        KUBECONFIG: "/root/.kube/config"
+
+    - name: Get ArgoCD admin password
+      shell: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d
+      register: argocd_password
+      environment:
+        KUBECONFIG: "/root/.kube/config"
+      ignore_errors: yes
+
+    - name: Install ArgoCD CLI
+      shell: |
+        curl -sSL -o /usr/local/bin/argocd https://github.com/argoproj/argo-cd/releases/latest/download/argocd-linux-amd64
+        chmod +x /usr/local/bin/argocd
+      args:
+        creates: /usr/local/bin/argocd
+
+    - name: Allow ArgoCD ports in firewall
+      ufw:
+        rule: allow
+        port: "{{ item }}"
+        proto: tcp
+      loop: [30080, 30443]
+
+    # ========================================
+    # Security Scanning Tools
+    # ========================================
+    - name: Add Trivy GPG key
+      apt_key:
+        url: https://aquasecurity.github.io/trivy-repo/deb/public.key
+        state: present
+
+    - name: Add Trivy repository
+      apt_repository:
+        repo: "deb https://aquasecurity.github.io/trivy-repo/deb {{ ansible_distribution_release }} main"
+        state: present
+
+    - name: Install Trivy (vulnerability scanner)
+      apt:
+        name: trivy
+        state: present
+        update_cache: yes
+
+    - name: Install Syft (SBOM generator)
+      shell: |
+        curl -sSL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+      args:
+        creates: /usr/local/bin/syft
+
+    # ========================================
+    # Setup Summary
+    # ========================================
+    - name: Display setup completion
+      debug:
+        msg: |
+          ✓ Setup Complete!
+          
+          Services Running:
+          - Jenkins: http://{{ ansible_host }}:8080
+          - ArgoCD: http://{{ ansible_host }}:30080
+          - NGINX Test: http://{{ ansible_host }}:8888
+          
+          Credentials:
+          - Jenkins Password: {{ jenkins_password['content'] | b64decode if jenkins_password.content is defined else 'Check Jenkins UI' }}
+          - ArgoCD Password: {{ argocd_password.stdout | default('Check with: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d') }}
+          
+          Security Tools:
+          - Trivy: trivy image <image-name>
+          - Syft: syft <image-name>
+          
+          Ready for application deployment!

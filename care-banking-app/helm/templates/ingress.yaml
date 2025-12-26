@@ -1,0 +1,22 @@
+# This is an ingress template file for the care-banking-app application. Since this setup reuires to modify the /etc/hosts file in the system, 
+# so we are not using this approch for now. The ingress resource is commented out.
+
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: {{ .Values.app.name }}
+#   namespace: banking-production
+#   labels:
+#     app: {{ .Values.app.name }}
+# spec:
+#   rules:
+#   - host: care-banking-app.local
+#     http:
+#       paths:
+#       - path: /
+#         pathType: Prefix
+#         backend:
+#           service:
+#             name: {{ .Values.app.name }}
+#             port:
+#               number: 80

@@ -1,0 +1,247 @@
+pipeline {
+    agent any
+
+    options {
+        skipDefaultCheckout(true)
+        timestamps()
+        timeout(time: 30, unit: 'MINUTES')
+    }
+
+    environment {
+        IMAGE_NAME = 'sameedshoaib1/care-banking-app'
+        REPO_URL = 'https://github.com/sameedshoaibb/devops-web-api.git'
+    }
+
+    triggers {
+        githubPush()
+    }
+
+    stages {
+        stage('Clean Workspace') {
+            steps {
+                cleanWs()
+            }
+        }
+
+        stage('Clone Repository') {
+            steps {
+                git branch: 'main', url: "${REPO_URL}"
+            }
+        }
+
+        stage('Abort if Jenkins Bot Commit') {
+            steps {
+                script {
+                    def authorEmail = sh(
+                        script: "git log -1 --pretty=format:'%ae'",
+                        returnStdout: true
+                    ).trim()
+
+                    echo "Last commit author: ${authorEmail}"
+
+                    if (authorEmail == 'jenkins@example.com') {
+                        echo "Jenkins bot commit detected — stopping pipeline to prevent loop."
+                        currentBuild.result = 'SUCCESS'
+                        error("Pipeline aborted (jenkins-bot commit)")
+                    }
+                }
+            }
+        }
+
+        stage('Increment Version') {
+            steps {
+                script {
+                    sh '''
+                        # Get latest tag from Docker Hub
+                        echo "Fetching latest version from Docker Hub..."
+                        LATEST_TAG=$(curl -s https://registry.hub.docker.com/v2/repositories/sameedshoaib1/care-banking-app/tags/ | grep -o '"name":"[^"]*"' | head -1 | cut -d'"' -f4)
+                        
+                        # If no tag found, use default
+                        if [ -z "$LATEST_TAG" ]; then
+                            CURRENT_VERSION="v1.0.0"
+                        else
+                            CURRENT_VERSION="$LATEST_TAG"
+                        fi
+                        
+                        echo "Current version from Docker Hub: $CURRENT_VERSION"
+                        
+                        # Increment patch version
+                        # v1.0.2 becomes v1.0.3
+                        NEW_VERSION=$(echo $CURRENT_VERSION | awk -F. '{print $1"."$2"."$3+1}')
+                        echo "New version: $NEW_VERSION"
+                        
+                        # Save new version
+                        echo "$NEW_VERSION" > VERSION
+                    '''
+                    
+                    // Read the new version
+                    env.IMAGE_TAG = sh(script: 'cat VERSION', returnStdout: true).trim()
+                    echo "IMAGE_TAG set to: ${env.IMAGE_TAG}"
+                }
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                dir('care-banking-app') {
+                    sh "docker build -t ${IMAGE_NAME}:${IMAGE_TAG} ."
+                }
+            }
+        }
+
+        stage('SonarCloud Code Quality Scan') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'devops-web-token', usernameVariable: 'SONAR_USER', passwordVariable: 'SONAR_TOKEN')]) {
+                    sh '''
+                        sudo sonar-scanner \
+                            -Dsonar.projectKey=sameedshoaibb_devops-web-api \
+                            -Dsonar.organization=sameedshoaibb \
+                            -Dsonar.sources=. \
+                            -Dsonar.host.url=https://sonarcloud.io \
+                            -Dsonar.login=$SONAR_TOKEN \
+                            -Dsonar.analysis.mode=publish
+                    '''
+                }
+            }
+        }
+
+        stage('Test Health Endpoint') {
+            steps {
+                sh "docker rm -f care-banking-app-test || true"
+                sh "docker run -d --name care-banking-app-test -p 4000:4000 ${IMAGE_NAME}:${IMAGE_TAG}"
+                sh "sleep 5"
+                sh "curl -f http://localhost:4000/health || exit 1"
+                sh "docker stop care-banking-app-test && docker rm care-banking-app-test"
+            }
+        }
+
+        stage('Scan with Trivy') {
+            steps {
+                sh '''
+                    mkdir -p security-reports
+                    
+                    echo "=========================================="
+                    echo "1. TRIVY IMAGE SCAN"
+                    echo "=========================================="
+                    trivy image --severity HIGH,CRITICAL \
+                        --format json --output security-reports/trivy-image-report.json \
+                        --format table ${IMAGE_NAME}:${IMAGE_TAG} | tee security-reports/trivy-image-report.txt
+                    
+                    cat security-reports/trivy-image-report.txt
+                    echo "=========================================="
+                    
+                    echo ""
+                    echo "=========================================="
+                    echo "2. TRIVY FILESYSTEM SCAN"
+                    echo "=========================================="
+                    trivy fs --severity HIGH,CRITICAL \
+                        --format json --output security-reports/trivy-fs-report.json \
+                        --format table . | tee security-reports/trivy-fs-report.txt
+                    
+                    cat security-reports/trivy-fs-report.txt
+                    echo "=========================================="
+                    
+                    echo ""
+                    echo "=========================================="
+                    echo "3. TRIVY CONFIG SCAN (Kubernetes & Cloud)"
+                    echo "=========================================="
+                    trivy config --severity HIGH,CRITICAL \
+                        --format json --output security-reports/trivy-config-report.json \
+                        --format table care-banking-app/helm 2>/dev/null | tee security-reports/trivy-config-report.txt || echo "No config files found or scan skipped"
+                    
+                    echo "=========================================="
+                '''
+            }
+        }
+
+        stage('Generate SBOM') {
+            steps {
+                sh '''
+                    syft ${IMAGE_NAME}:${IMAGE_TAG} --output json > security-reports/sbom-syft.json
+                    syft ${IMAGE_NAME}:${IMAGE_TAG} --output cyclonedx-json > security-reports/sbom-cyclonedx.json
+                    syft ${IMAGE_NAME}:${IMAGE_TAG} --output table > security-reports/sbom-report.txt
+                    
+                    echo "=========================================="
+                    echo "SOFTWARE BILL OF MATERIALS (SBOM)"
+                    echo "=========================================="
+                    cat security-reports/sbom-report.txt
+                    echo "=========================================="
+                '''
+            }
+        }
+
+        stage('Scan Dependencies') {
+            steps {
+                sh '''
+                    echo "=========================================="
+                    echo "DEPENDENCY VULNERABILITY SCAN"
+                    echo "=========================================="
+                    
+                    # Scan package.json for npm vulnerabilities
+                    if [ -f "care-banking-app/package.json" ]; then
+                        echo "Checking npm dependencies..."
+                        cd care-banking-app
+                        npm audit --json > ../security-reports/npm-audit.json 2>/dev/null || true
+                        npm audit --audit-level=moderate 2>&1 | tee ../security-reports/npm-audit.txt || true
+                        cd ..
+                        
+                        echo "=========================================="
+                        echo "NPM AUDIT REPORT"
+                        echo "=========================================="
+                        cat security-reports/npm-audit.txt
+                        echo "=========================================="
+                    fi
+                '''
+            }
+        }
+
+        stage('Update Helm Values') {
+            steps {
+                sh '''
+                    # Update app imageTag only (not nginx)
+                    sed -i "/^app:/,/^[a-z]/ s/imageTag: .*/imageTag: ${IMAGE_TAG}/" care-banking-app/helm/values.prod.yaml
+                    echo "Production: care-banking-app/helm/values.prod.yaml"
+                    grep "imageTag:" care-banking-app/helm/values.prod.yaml
+                                    '''
+            }
+        }
+
+        stage('Push to Docker Hub') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+                    sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+                    sh "docker push ${IMAGE_NAME}:${IMAGE_TAG}"
+                }
+            }
+        }
+
+        stage('Commit & Push Helm Updates') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'GIT_TOKEN', usernameVariable: 'GIT_USERNAME', passwordVariable: 'GIT_TOKEN')]) {
+                    sh '''
+                        git config user.name "Jenkins CI"
+                        git config user.email "jenkins@example.com"
+                        
+                        if git diff --quiet care-banking-app/helm/values.prod.yaml; then
+                            echo "No changes in Helm values"
+                        else
+                            git add care-banking-app/helm/values.prod.yaml
+                            git commit -m "Update Helm values and image tag to ${IMAGE_TAG}"
+                            git push https://${GIT_TOKEN}@github.com/sameedshoaibb/devops-web-api.git HEAD:main
+                        fi
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            sh "docker rmi ${IMAGE_NAME}:${IMAGE_TAG} || true"
+        }
+    }
+}
+
+
+
+

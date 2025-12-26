@@ -1,0 +1,51 @@
+# Production environment overrides
+
+replicaCount: 1
+
+app:
+  imageTag: v1.0.7
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+nginx:
+  image: nginx
+  imageTag: "1.26.1-alpine"
+  imagePullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+
+cronjob:
+  schedule: "*/1 * * * *"
+  threshold: "10000"
+  alertEmail: "alert@example.org"
+
+resourceQuota:
+  hard:
+    requests:
+      cpu: "10"
+      memory: "10Gi"
+      storage: "50Gi"
+    limits:
+      cpu: "20"
+      memory: "20Gi"
+
+persistentVolume:
+  size: 2Gi
+  storageClassName: care-banking-app-storage
+
+persistentVolumeClaim:
+  size: 1Gi
+  storageClassName: care-banking-app-storage
+
+priorityClass:
+  value: 1000

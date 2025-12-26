@@ -1,0 +1,65 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ .Values.app.name }}-nginx
+  labels:
+    app.kubernetes.io/name: {{ .Values.app.name }}
+    app.kubernetes.io/version: {{ .Values.app.version }}
+data:
+  nginx.conf: |
+    user nginx;
+    worker_processes auto;
+    error_log /var/log/nginx/error.log warn;
+    pid /var/run/nginx.pid;
+    
+    events {
+      worker_connections 1024;
+    }
+    
+    http {
+      include /etc/nginx/mime.types;
+      default_type application/octet-stream;
+
+      # Normal log format
+      log_format main '$remote_addr - [$time_local] "$request" $status $body_bytes_sent';
+
+      # Slow request log format
+      log_format slow_requests '[SLOW_REQUEST] [$time_local] Remote: $remote_addr | Request: $request | Status: $status | Time: $request_time s';
+
+      map $request_time $slow {
+        "~^0\.00[2-9]" 1;      # 0.002–0.009 sec
+        "~^0\.0[1-9]\d" 1;     # 0.01–0.09 sec
+        "~^0\.[1-9]\d+" 1;     # 0.1–0.9 sec
+        "~^[1-9]\d*" 1;        # ≥1 sec
+        default 0;             # <= 0.001 sec
+      }
+
+      access_log /var/log/nginx/access.log main;
+
+      sendfile on;
+      tcp_nopush on;
+      tcp_nodelay on;
+      keepalive_timeout 65;
+      types_hash_max_size 2048;
+
+      upstream banking_api {
+        server localhost:{{ .Values.service.port }};
+      }
+
+      server {
+        listen 80;
+        server_name _;
+
+        location / {  
+          proxy_pass http://banking_api;
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+
+          # Only log requests > 0.001 sec
+          access_log /var/log/nginx/slow_requests.log slow_requests if=$slow buffer=32k flush=5s;
+        }
+      }
+    }
+    

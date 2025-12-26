@@ -1,0 +1,45 @@
+# # Development environment overrides
+
+# replicaCount: 1
+
+# app:
+#   imageTag: v0.0.17
+#   livenessProbe:
+#     initialDelaySeconds: 10
+#   readinessProbe:
+#     initialDelaySeconds: 5
+#   resources:
+#     requests:
+#       cpu: "100m"
+#       memory: "128Mi"
+#     limits:
+#       cpu: "200m"
+#       memory: "256Mi"
+
+# nginx:
+#   image: nginx
+#   imageTag: "1.26.1-alpine"
+#   imagePullPolicy: IfNotPresent
+#   resources:
+#     requests:
+#       cpu: "50m"
+#       memory: "64Mi"
+#     limits:
+#       cpu: "100m"
+#       memory: "128Mi"
+
+# cronjob:
+#   schedule: "*/5 * * * *"
+
+# resourceQuota:
+#   hard:
+#     requests:
+#       cpu: "2"
+#       memory: "2Gi"
+#       storage: "10Gi"
+#     limits:
+#       cpu: "4"
+#       memory: "4Gi"
+
+# priorityClass:
+#   value: 500

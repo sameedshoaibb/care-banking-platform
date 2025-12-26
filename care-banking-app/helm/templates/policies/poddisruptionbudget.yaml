@@ -1,0 +1,14 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ .Values.app.name }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    app: {{ .Values.app.name }}
+    version: {{ .Values.app.version }}
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: {{ .Values.app.name }}
+  unhealthyPodEvictionPolicy: IfHealthyBudget

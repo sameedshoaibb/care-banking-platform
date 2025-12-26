@@ -1,0 +1,106 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ .Values.app.name }}-balance-check
+  labels:
+    app: {{ .Values.app.name }}
+    job-type: cronjob
+spec:
+  schedule: "{{ .Values.cronjob.schedule }}"
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 5
+  
+  jobTemplate:
+    spec:
+      activeDeadlineSeconds: 300
+      backoffLimit: 0
+      
+      template:
+        metadata:
+          labels:
+            app: {{ .Values.app.name }}
+            job-type: cronjob
+          annotations:
+            description: "Daily balance checker job for low balance alerts"
+        spec:
+          serviceAccountName: {{ .Values.app.name }}
+          
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 65534
+            fsGroup: 65534
+            seccompProfile:
+              type: RuntimeDefault
+          
+          containers:
+          - name: balance-checker
+            image: curlimages/curl:8.17.0
+            imagePullPolicy: IfNotPresent
+            
+            env:
+              - name: API_URL
+                value: "http://{{ .Values.app.name }}:{{ .Values.service.port }}"
+              - name: API_KEY
+                valueFrom:
+                  secretKeyRef:
+                    name: care-banking-app-key
+                    key: adminApiKey
+              - name: THRESHOLD
+                value: {{ .Values.cronjob.threshold | default "10000" | quote }}
+              - name: ALERT_EMAIL
+                value: {{ .Values.cronjob.alertEmail | default "alert@example.org" | quote }}
+            
+            securityContext:
+              allowPrivilegeEscalation: false
+              readOnlyRootFilesystem: true
+              runAsNonRoot: true
+              runAsUser: 65534
+              capabilities:
+                drop:
+                  - ALL
+            
+            command: ["/bin/sh"]
+            args:
+              - -c
+              - |
+                #!/bin/sh
+                set -e
+
+                echo "[$(date -u +'%Y-%m-%d %H:%M:%S')] Starting balance check (threshold: -$THRESHOLD)"
+
+                # Fetch all accounts from the API
+                response=$(curl -s -X GET \
+                  -H "x-api-key: $API_KEY" \
+                  -H "Content-Type: application/json" \
+                  "$API_URL/admin/accounts")
+
+                # Look for accounts with a balance lower than the negative threshold
+                if echo "$response" | grep -qE '"balance":-[0-9]{5,}'; then
+                  echo "ALERT: One or more accounts have a very low balance (below -$THRESHOLD)"
+                  echo "Alert email: $ALERT_EMAIL"
+                  exit 0
+                else
+                  echo "OK: No accounts found with critically low balance"
+                  exit 0
+                fi
+
+            
+            # Resource requests and limits
+            resources:
+              requests:
+                memory: {{ .Values.cronjob.resources.requests.memory | default "64Mi" | quote }}
+                cpu: {{ .Values.cronjob.resources.requests.cpu | default "50m" | quote }}
+              limits:
+                memory: {{ .Values.cronjob.resources.limits.memory | default "128Mi" | quote }}
+                cpu: {{ .Values.cronjob.resources.limits.cpu | default "200m" | quote }}
+            
+            # Volume mounts for temporary storage
+            volumeMounts:
+              - name: tmp
+                mountPath: /tmp
+          
+          volumes:
+            - name: tmp
+              emptyDir: {}
+          
+          restartPolicy: OnFailure

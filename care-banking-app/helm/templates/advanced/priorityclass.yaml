@@ -1,0 +1,9 @@
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: {{ .Values.app.name }}-critical
+  labels:
+    app: {{ .Values.app.name }}
+value: {{ .Values.priorityClass.value }}
+globalDefault: false
+description: "{{ .Values.priorityClass.description }}"

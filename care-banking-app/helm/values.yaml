@@ -1,0 +1,114 @@
+# Default values for care-banking-app Helm chart
+
+replicaCount: 1
+
+# Application configuration
+app:
+  name: care-banking-app
+  version: "1.0.0"
+  image: sameedshoaib1/care-banking-app
+  imageTag: v1.0.2
+  imagePullPolicy: IfNotPresent
+  port: 4000
+  livenessProbe:
+    path: /ping
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+  readinessProbe:
+    path: /ping
+    initialDelaySeconds: 20
+    periodSeconds: 5
+    timeoutSeconds: 3
+    failureThreshold: 2
+  resources:
+    requests:
+      cpu: "250m"
+      memory: "256Mi"
+    limits:
+      cpu: "500m"
+      memory: "512Mi"
+
+# Init container configuration
+initContainer:
+  image: busybox:1.37.0
+  resources:
+    requests:
+      cpu: "10m"
+      memory: "32Mi"
+    limits:
+      cpu: "50m"
+      memory: "64Mi"
+
+# Nginx sidecar configuration
+nginx:
+  image: nginx
+  imageTag: "1.26.1-alpine"
+  imagePullPolicy: IfNotPresent
+  resources:
+    requests:
+      cpu: "100m"
+      memory: "128Mi"
+    limits:
+      cpu: "200m"
+      memory: "256Mi"
+
+# Volume sizes
+volumes:
+  config:
+    sizeLimit: 10Mi
+  nginxCache:
+    sizeLimit: 50Mi
+  nginxRun:
+    sizeLimit: 10Mi
+  nginxLogs:
+    sizeLimit: 100Mi
+  nginxConfD:
+    sizeLimit: 10Mi
+
+# Service configuration
+service:
+  type: ClusterIP
+  port: 4000
+
+# CronJob configuration
+cronjob:
+  schedule: "0 2 * * *"
+  threshold: "10000"
+  alertEmail: "alert@example.org"
+  resources:
+    requests:
+      cpu: "50m"
+      memory: "64Mi"
+    limits:
+      cpu: "200m"
+      memory: "128Mi"
+
+# ResourceQuota configuration
+resourceQuota:
+  hard:
+    requests:
+      cpu: "5"
+      memory: "5Gi"
+      storage: "20Gi"
+    limits:
+      cpu: "10"
+      memory: "10Gi"
+
+# PriorityClass configuration
+priorityClass:
+  value: 1000
+  description: "CareBanking - critical workload"
+
+# Persistent Volume configuration
+persistentVolume:
+  size: 1Gi
+  storageClassName: manual
+
+# Persistent Volume Claim configuration
+persistentVolumeClaim:
+  size: 1Gi
+  storageClassName: manual
+
+

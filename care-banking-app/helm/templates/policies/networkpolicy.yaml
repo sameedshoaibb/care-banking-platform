@@ -1,0 +1,43 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ .Values.app.name }}
+  namespace: {{ .Release.Namespace | quote }}
+  labels:
+    app: {{ .Values.app.name }}
+    version: {{ .Values.app.version }}
+spec:
+  podSelector:
+    matchLabels:
+      app: {{ .Values.app.name }}
+  policyTypes:
+    - Ingress
+    - Egress
+  
+  # Ingress: Allow traffic from same namespace (CronJob to API)
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: {{ .Values.app.name }}
+      ports:
+        - protocol: TCP
+          port: 4000
+  
+  # Egress: Allow DNS and internal communication
+  egress:
+    # Allow DNS queries
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: UDP
+          port: 53
+    
+    # Allow to same pod (localhost)
+    - to:
+        - podSelector:
+            matchLabels:
+              app: {{ .Values.app.name }}
+      ports:
+        - protocol: TCP
+          port: 4000

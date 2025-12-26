@@ -1,0 +1,30 @@
+# Terraform state files
+*.tfstate
+*.tfstate.*
+
+# Terraform directories
+.terraform/
+.terraform.lock.hcl
+
+# Sensitive files
+secrets.tfvars
+*.secret
+*.pem
+*.key
+
+# IDE and OS files
+.DS_Store
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+*.iml
+
+# Terraform plan files
+*.tfplan
+*.out
+
+# Environment files
+.env
+.env.local
