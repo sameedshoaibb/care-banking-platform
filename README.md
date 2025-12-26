@@ -137,22 +137,33 @@ For specific technical concerns, refer to these resources:
 
 ## CI/CD & Deployment Tools
 
-Add snapshots and details here for your CI/CD ecosystem components:
+This section showcases the CI/CD ecosystem that automates your entire deployment flow:
 
 ### Jenkins Pipeline
 13-stage automated CI/CD pipeline that runs on every code push:
+- Code checkout and building
+- Security scanning with Trivy and SonarCloud
+- Docker image creation and push to registry
+- Deployment configuration updates
 
-[![alt text](jenkins-pipeline.png)]
+![Jenkins Pipeline](assets/images/jenkins-pipeline.png)
 
 ### SonarCloud Code Quality
 Static code analysis and security scanning:
+- Code quality metrics and violations
+- Security vulnerabilities detection
+- Code coverage tracking
 
-[![alt text](sonarqube.png)]
+![SonarQube](assets/images/sonarqube.png)
 
 ### ArgoCD GitOps Deployment
 Continuous deployment and application synchronization:
+- Git-based source of truth
+- Automatic application sync
+- Multi-environment management (dev, staging, prod)
+- Visual deployment status and rollback capabilities
 
-[![alt text](argocd.png)]
+![ArgoCD](assets/images/argocd.png)
 
 ## Project Structure
 
@@ -161,14 +172,22 @@ Read in this order: Terraform → Ansible → Care-Banking-App
 ```
 care-banking-platform/
 ├── README.md
-├── banking.md
+├── assets/
+│   └── images/
+│       ├── jenkins-pipeline.png
+│       ├── sonarqube.png
+│       └── argocd.png
 │
 ├── platform/
 │   ├── terraform/                    ← Start here: Creates cloud infrastructure
-│   │   ├── README.md                 (See setup instructions)
+│   │   ├── README.md
 │   │   ├── main.tf
+│   │   ├── providers.tf
 │   │   ├── variables.tf
+│   │   ├── outputs.tf
 │   │   ├── secrets.tfvars
+│   │   ├── terraform.tfstate
+│   │   ├── terraform.tfstate.backup
 │   │   └── modules/
 │   │       ├── azure-resource-group/
 │   │       ├── azure-vnet/
@@ -176,21 +195,23 @@ care-banking-platform/
 │   │       └── azure-monitoring/
 │   │
 │   └── ansible/                      ← Then here: Configures the VM
-│       ├── README.md                 (See configuration instructions)
+│       ├── README.md
 │       ├── ansible.cfg
 │       ├── inventory.ini
 │       ├── setup.yml
 │       ├── requirements.yml
 │       ├── group_vars/
 │       │   └── all.yml
-│       ├── scripts/
-│       ├── ARGOCD.md
-│       └── CLEANUP_SUMMARY.md
+│       └── scripts/
 │
 └── care-banking-app/                 ← Finally: Deploy your application
     ├── README.md
-    ├── Jenkinsfile                   (CI/CD pipeline)
-    ├── Dockerfile                    (Container image)
+    ├── Jenkinsfile
+    ├── Dockerfile
+    ├── config.json
+    ├── package.json
+    ├── pnpm-lock.yaml
+    ├── tsconfig.json
     ├── deploy.sh
     ├── start.sh
     │
@@ -202,48 +223,37 @@ care-banking-platform/
     │   ├── adminRoutes.ts
     │   └── userRoutes.ts
     │
-    ├── helm/                         (Kubernetes deployment configs)
-    │   ├── Chart.yaml
-    │   ├── README.md
-    │   ├── values.yaml
-    │   ├── values.dev.yaml
-    │   ├── values.staging.yaml
-    │   ├── values.prod.yaml
-    │   └── templates/
-    │       ├── _helpers.tpl
-    │       ├── deployment.yaml
-    │       ├── service.yaml
-    │       ├── configmap.yaml
-    │       ├── secret.yaml
-    │       ├── ingress.yaml
-    │       ├── data-file-configmap.yaml
-    │       ├── rbac/
-    │       │   ├── role.yaml
-    │       │   ├── rolebinding.yaml
-    │       │   └── serviceaccount.yaml
-    │       ├── storage/
-    │       │   ├── pv.yaml
-    │       │   └── pvc.yaml
-    │       ├── policies/
-    │       │   ├── networkpolicy.yaml
-    │       │   ├── poddisruptionbudget.yaml
-    │       │   └── resourcequota.yaml
-    │       ├── advanced/
-    │       │   ├── cronjob.yaml
-    │       │   ├── hpa.yaml
-    │       │   ├── vpa.yaml
-    │       │   └── priorityclass.yaml
-    │       ├── nginx/
-    │       │   └── configmap-nginx.yaml
-    │       └── tests/
-    │           └── test-connection.yaml
-    │
-    ├── package.json
-    ├── pnpm-lock.yaml
-    ├── tsconfig.json
-    ├── config.json
-    ├── .dockerignore
-    ├── .gitignore
-    ├── .prettierrc.yaml
-    └── .prettierignore
+    └── helm/                         (Kubernetes deployment configs)
+        ├── Chart.yaml
+        ├── README.md
+        ├── values.yaml
+        ├── values.dev.yaml
+        ├── values.staging.yaml
+        ├── values.prod.yaml
+        └── templates/
+            ├── _helpers.tpl
+            ├── configmap.yaml
+            ├── deployment.yaml
+            ├── ingress.yaml
+            ├── secret.yaml
+            ├── service.yaml
+            ├── rbac/
+            │   ├── role.yaml
+            │   ├── rolebinding.yaml
+            │   └── serviceaccount.yaml
+            ├── storage/
+            │   ├── pv.yaml
+            │   └── pvc.yaml
+            ├── policies/
+            │   ├── networkpolicy.yaml
+            │   ├── poddisruptionbudget.yaml
+            │   └── resourcequota.yaml
+            ├── advanced/
+            │   ├── cronjob.yaml
+            │   ├── hpa.yaml
+            │   └── priorityclass.yaml
+            ├── nginx/
+            │   └── configmap-nginx.yaml
+            └── tests/
+                └── test-connection.yaml
 ```
