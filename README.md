@@ -142,17 +142,17 @@ Add snapshots and details here for your CI/CD ecosystem components:
 ### Jenkins Pipeline
 13-stage automated CI/CD pipeline that runs on every code push:
 
-[Add Jenkins Pipeline Snapshot Here]
+[![alt text](jenkins-pipeline.png)]
 
 ### SonarCloud Code Quality
 Static code analysis and security scanning:
 
-[Add SonarCloud Snapshot Here]
+[![alt text](sonarqube.png)]
 
 ### ArgoCD GitOps Deployment
 Continuous deployment and application synchronization:
 
-[Add ArgoCD Dashboard Snapshot Here]
+[![alt text](argocd.png)]
 
 ## Project Structure
 
