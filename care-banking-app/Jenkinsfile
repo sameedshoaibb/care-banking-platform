@@ -9,7 +9,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = 'sameedshoaib1/care-banking-app'
-        REPO_URL = 'https://github.com/sameedshoaibb/devops-web-api.git'
+        REPO_URL = 'https://github.com/sameedshoaibb/care-banking-platform.git'
     }
 
     triggers {
@@ -94,7 +94,7 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'devops-web-token', usernameVariable: 'SONAR_USER', passwordVariable: 'SONAR_TOKEN')]) {
                     sh '''
                         sudo sonar-scanner \
-                            -Dsonar.projectKey=sameedshoaibb_devops-web-api \
+                            -Dsonar.projectKey=sameedshoaibb_care-banking-platform \
                             -Dsonar.organization=sameedshoaibb \
                             -Dsonar.sources=. \
                             -Dsonar.host.url=https://sonarcloud.io \
@@ -227,7 +227,7 @@ pipeline {
                         else
                             git add care-banking-app/helm/values.prod.yaml
                             git commit -m "Update Helm values and image tag to ${IMAGE_TAG}"
-                            git push https://${GIT_TOKEN}@github.com/sameedshoaibb/devops-web-api.git HEAD:main
+                            git push https://${GIT_TOKEN}@github.com/sameedshoaibb/care-banking-platform.git HEAD:main
                         fi
                     '''
                 }

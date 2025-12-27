@@ -1,70 +1,51 @@
-# Banking API: Image Building Process and Implementation Guide
+# Care Banking App
 
-## Build Process
+A real-world banking API built to show how proper architecture works— the app sits behind an API gateway (Nginx in this case) instead of being exposed directly. That's how things work in production.
 
-### Overview
-Started with building the Docker image from the source code. 
+## What's Inside
 
-### Testing
+- **Source code** - Node.js/TypeScript banking app with account management, deposits, withdrawals, and admin operations
+- **Dockerfile** - Multi-stage build optimized for security and size (non-root user, pinned dependencies, 25% smaller)
+- **Helm charts** - Kubernetes deployment manifests with environment-specific values (dev, staging, prod)
+- **Jenkinsfile** - 13-stage CI/CD pipeline with security scans, Docker builds, and automated deployments
+- **Nginx proxy** - Reverse proxy with slow request logging for performance monitoring
+- **CronJob** - Automated balance checks running every minute
 
-All the 6 API endpoints are functional:
-- User endpoints: GET, POST, PUT, DELETE
-- Admin endpoints: GET accounts, DELETE account
-- Note: Delete API only works if account balance is zero
+## API Overview
 
-### Build Commands
+Six endpoints handle all banking operations:
+- **User endpoints** - GET account info, POST deposit/withdraw
+- **Admin endpoints** - POST create account, GET/DELETE all accounts
+- **Health check** - GET ping for service verification
 
-```bash
-docker build -t care-banking-app:v1.0.0 .
-docker run -dit -p 4000:4000 care-banking-app:v1.0.0
-docker exec -it <container_id> /bin/sh
-```
+## Docker Optimizations
 
----
-
-## Deployment Script
-
-The `deploy.sh` now supports:
-- Multiple environments: dev, staging, production
-- Enhanced testing and verification capabilities
-
----
-
-## Design Features
-
-### Dockerfile Optimizations
-
-- **25% smaller image** - Multi-stage build removes build tools and temporary files
-- **Pinned Node.js version** - `node:20.19.6-alpine` for reproducible builds with zero known vulnerabilities
-- **Better layer caching** - Dependencies installed before source code for faster rebuilds
-- **Non-root execution** - Container runs under `appuser` for improved security
-- **Clean final image** - TypeScript, Prettier, and test frameworks removed
+Our Docker image is optimized for performance and security:
+- **smaller image** - Multi-stage build removes build tools and temporary files
+- **Pinned Node.js version** - node:20.19.6-alpine for reproducible builds
+- **Better layer caching** - Dependencies installed before source code
+- **Non-root execution** - Container runs under appuser for security
 - **pnpm with Corepack** - Faster installs and deterministic package management
-- **Clear documentation** - Comments explain each part of the Dockerfile
-- **Optimized build context** - `.dockerignore` excludes unnecessary files
 
----
+## Deployment Strategy
 
----
+The `deploy.sh` script automates Helm deployments across multiple environments (dev, staging, prod). Instead of manual Helm commands, it handles everything: diffing changes, linting the chart, rendering templates, and executing deployments—keeping configuration consistent across all environments.
 
 ## Getting Started
 
 ### Prerequisites
-
-- Docker
-- Kubernetes cluster (kubectl configured)
-- Helm 3.x
-- Local build (no container registry used)
+- Docker and Kubernetes cluster running
+- Helm 3.x installed
+- kubectl configured
+- care-banking-app secret created (see Step 2)
 
 ### Step 1: Build Docker Image
-
 ```bash
 cd care-banking-app
 docker build -t care-banking-app:v1.0.0 .
 ```
 
 ### Step 2: Create Kubernetes Secret
-
 ```bash
 kubectl create secret generic care-banking-app-key \
   --from-literal=adminApiKey=sameed \
@@ -74,43 +55,31 @@ kubectl create secret generic care-banking-app-key \
 **Note:** Secrets are created outside of Helm for security reasons. They are injected into the app at runtime via an init container. For more details, see `helm/README.md`
 
 ### Step 3: Deploy Application
-
 Deploy to your desired environment:
-
-**Production:**
 ```bash
-deploy.sh prod
+deploy.sh prod     # Production
+deploy.sh staging  # Staging
+deploy.sh dev      # Development
 ```
 
-**Development:**
+### Step 4: Verify Deployment
 ```bash
-deploy.sh dev
-```
-
-**Staging:**
-```bash
-deploy.sh staging
-```
-
-### Step 4: Port Forwarding (for local testing)
-
-```bash
+kubectl get all -n care-banking-app
 kubectl port-forward -n care-banking-app svc/care-banking-app 8181:80 &
 ```
 
-**Note:** Port forwarding is used for local testing. Ingress was avoided to prevent requiring `/etc/hosts` file modifications with admin privileges.
+Access the app at `http://localhost:8181`
 
 
-## Deployment Verification
+## Verification
 
-### Expected Kubernetes Resources
+After deployment, verify resources are running:
 
-After successful deployment, verify with:
 ```bash
 kubectl get all -n care-banking-app
 ```
 
-**Expected Output:**
+**Actual Output:**
 ```
 NAME                                   READY   STATUS    RESTARTS   AGE
 pod/care-banking-app-b645867fb-d4t8z   2/2     Running   0          17m
@@ -140,15 +109,16 @@ job.batch/care-banking-app-balance-check-29446371   1/1           4s         54s
 
 ## API Testing
 
-### Endpoint 1: Health Check (Ping)
+Test the endpoints using curl (make sure port-forward is running):
 
+### Health Check
 ```bash
 curl -s http://localhost:8181/ping
 ```
-**Note:** We are using nginx reverse proxy to route the request to our backend-api.
 
-### Endpoint 2: Create Account (Admin Only)
+All requests route through the Nginx reverse proxy, which sits in front of the API.
 
+### Create Account (Admin)
 ```bash
 curl -s -X POST http://localhost:8181/admin/account \
   -H "x-api-key: sameed" \
@@ -156,51 +126,37 @@ curl -s -X POST http://localhost:8181/admin/account \
   -d '{"accountId":"test1","password":"pass123"}'
 ```
 
-**Note:** Admin API key is injected during runtime from the Kubernetes secret.
-
-### Endpoint 3: Get Account Info
-
+### Get Account Info
 ```bash
 curl -s -X POST http://localhost:8181/account/test1/info \
   -H "Content-Type: application/json" \
   -d '{"password":"pass123"}'
 ```
 
-### Endpoint 4: Deposit Funds
-
+### Deposit Funds
 ```bash
 curl -s -X POST http://localhost:8181/account/test1/deposit \
   -H "Content-Type: application/json" \
   -d '{"password":"pass123","amount":5000}'
-
-  Output: {"balance":110000}
 ```
 
-### Endpoint 5: Withdraw Funds
-
+### Withdraw Funds
 ```bash
 curl -s -X POST http://localhost:8181/account/test1/withdraw \
   -H "Content-Type: application/json" \
   -d '{"password":"pass123","amount":1500}'
-
-  Output: {"balance":108500}
 ```
+**Output:** {"balance":108500}
 
-### Endpoint 6: List All Accounts (Admin Only)
-
+### List All Accounts (Admin)
 ```bash
 curl -s -H "x-api-key: sameed" http://localhost:8181/admin/accounts
-
-Output: {"accounts":{"test1":{"id":"test1","password":"pass123","balance":108500,"createdAt":1766782387129,"updatedAt":1766782438669}}}
 ```
-
-**Note:** Delete API only works if account balance is zero.
+**Output:** {"accounts":{"test1":{"id":"test1","password":"pass123","balance":108500,"createdAt":1766782387129,"updatedAt":1766782438669}}}
 
 ---
 
-## DevOps Challenge
-
-After running all the endpoints, we will have the data to see the results.
+## Monitoring & Automation
 
 ### 1. Nginx Proxy - Slow Request Logging
 
@@ -210,12 +166,7 @@ View slow requests (requests taking > 0.001 seconds):
 kubectl exec -n care-banking-app deploy/care-banking-app -c nginx-proxy -- tail -5 /var/log/nginx/slow_requests.log
 ```
 
-**Implementation Details:**
-- Threshold: 0.001 seconds (1ms)
-- Requests exceeding this threshold are logged with timing information
-- This threshold was chosen because I was not able to replicate 1 sec as a slow requests in a test environment
-
-**Sample Output:**
+Example output shows request timing data:
 ```
 [SLOW_REQUEST] [26/Dec/2025:20:53:07 +0000] Remote: 127.0.0.1 | Request: POST /admin/account HTTP/1.1 | Status: 200 | Time: 0.011 s
 [SLOW_REQUEST] [26/Dec/2025:20:53:25 +0000] Remote: 127.0.0.1 | Request: POST /account/test1/deposit HTTP/1.1 | Status: 200 | Time: 0.002 s
@@ -223,7 +174,7 @@ kubectl exec -n care-banking-app deploy/care-banking-app -c nginx-proxy -- tail 
 
 ### 2. CronJob - Balance Check Status
 
-The CronJob runs every minute to check for accounts with critically low balance (threshold: -10,000).
+Runs every minute to detect accounts with critically low balance (threshold: -10,000):
 
 **View CronJob logs:**
 ```bash
