@@ -2,15 +2,15 @@
 
 ## Purpose
 
-A complete DevOps setup that automates building, testing, and deploying a banking app to Kubernetes. Uses **GitOps** so deployments sync automatically from Git.
+A complete DevOps setup that automates building, testing, and deploying a banking app to Kubernetes. Uses **GitOps** so deployment sync automatically from Git.
 
 ## What's Inside
 
 ### Platform Folder
-Infrastructure setup for Kubernetes on a single VM.
+Infrastructure setup for Kubernetes on a single node.
 
 - **Terraform** - Sets up cloud infrastructure on Azure (VM, networking, security)
-- **Ansible** - Installs Docker, Kubernetes, Jenkins, and ArgoCD on the VM
+- **Ansible** - Installs Docker, Kubernetes, Jenkins, and ArgoCD on the node
 
 ### Care-Banking-App Folder
 The application and its deployment config.
@@ -60,7 +60,7 @@ Deploy infrastructure with Terraform:
 
 **For detailed instructions:** See `platform/terraform/README.md`
 
-### Step 2: Configure Ansible
+### Step 2: Ansible
 Edit `platform/ansible/inventory.ini` with your Terraform VM Public IP:
 - VM public IP address (from terraform output)
 - SSH key path

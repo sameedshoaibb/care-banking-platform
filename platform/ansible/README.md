@@ -4,13 +4,19 @@ Automated server setup that installs Docker, Kubernetes, Jenkins, and ArgoCD on 
 
 ## What Gets Installed
 
-- **Docker** - Container runtime for building and running applications
-- **Kubernetes** - Container orchestration platform (single-node cluster)
-- **Jenkins** - CI/CD automation server
+- **Docker** - Container runtime
+- **Kubernetes** - Container orchestration (single node)
+- **kubelet & kubectl** - Kubernetes node and CLI tools
+- **kubeadm** - Kubernetes cluster initialization tool
+- **Flannel CNI** - Pod networking (10.244.0.0/16)
+- **Jenkins** - CI/CD server (port 8080)
 - **Helm** - Kubernetes package manager
-- **ArgoCD** - GitOps continuous deployment platform
-- **UFW Firewall** - Security with configured inbound rules
-- **System Security** - Non-root user with sudo, SSH key authentication, swap disabled
+- **ArgoCD** - GitOps deployment (port 30080)
+- **ArgoCD CLI** - Command-line tool for GitOps management
+- **Trivy** - Vulnerability scanner for images and code
+- **Syft** - Software Bill of Materials (SBOM) generator
+- **UFW Firewall** - Security hardening
+- **System Security** - Non-root user, SSH keys, swap disabled
 
 ## Quick Start
 
@@ -31,22 +37,24 @@ Takes about 10-15 minutes to complete.
 ## What Happens During Setup
 
 1. **System** - Updates packages, installs essentials
-2. **Docker** - Installs container runtime with security permissions
-3. **Kubernetes** - Installs and initializes single-node cluster
-4. **Jenkins** - Sets up CI/CD server on port 8080
+2. **Docker** - Installs container runtime
+3. **Kubernetes** - Initializes single-node cluster
+4. **Jenkins** - Sets up CI/CD server
 5. **ArgoCD** - Configures GitOps platform
-6. **Security** - Hardens VM with firewall and user permissions
-7. **Verification** - Tests Docker and Kubernetes functionality
+6. **Security** - Hardens VM with firewall and users
+7. **Verification** - Tests Docker and Kubernetes
 
-## After Setup Completes
+## After Setup
 
-- **Jenkins**: Access at `http://YOUR_SERVER_IP:8080`
-- **ArgoCD**: Access at `http://YOUR_SERVER_IP:30080`
-- **Kubernetes**: Ready for application deployments
+Services will be running at:
+- **Jenkins**: http://YOUR_SERVER_IP:8080
+- **ArgoCD**: http://YOUR_SERVER_IP:30080
+- **NGINX Test Container**: http://YOUR_SERVER_IP:8888 (Docker verification)
+- **Kubernetes**: Ready for deployments
 
 ## Setup Output Example
 
-After running the playbook successfully, you'll see:
+After running the playbook successfully, you'll see Output like this:
 
 ```
 TASK [Display setup completion] ****
@@ -84,35 +92,17 @@ All services are now running and ready to use!
 
 ## Verification
 
-After the playbook completes successfully, verify the installation:
-
-### Check System Services
-
-SSH to your server and verify services:
+After the playbook completes, verify installation:
 
 ```bash
 ssh devops@YOUR_SERVER_IP
 
-# Check Kubernetes
+# Check cluster
 kubectl get nodes
 kubectl get pods -A
 
-# Check Docker
-docker ps
-
-# Check Jenkins status
+# Check services
 systemctl status jenkins
-```
-
-### Test Network Connectivity
-
-Verify that all services are accessible:
-
-```bash
-# Test Docker (NGINX container)
-curl http://YOUR_SERVER_IP:8888
-
-# Test Jenkins web interface
 curl http://YOUR_SERVER_IP:8080
 ```
 
@@ -120,40 +110,19 @@ curl http://YOUR_SERVER_IP:8080
 
 ## User Management
 
-The playbook creates two user accounts with different purposes:
+The playbook creates two users:
 
-**Primary User (ubuntu/sameed)**
-- Used for interactive work and running Ansible
-- Has sudo privileges and SSH access
-- Used for manual server administration
+**ubuntu/sameed** - For manual server administration with sudo and SSH access
 
-**DevOps User (devops)**  
-- Created specifically for CI/CD pipelines and automation
-- Has Docker and Kubernetes access
-- Used by Jenkins and automated scripts
-- Includes kubeconfig for cluster access
-
-Both users have sudo access and can run kubectl commands. This separation maintains security by isolating automated processes from interactive sessions.
+**devops** - For CI/CD pipelines with Docker, Kubernetes, and kubeconfig access
 
 ---
 
 ## Network Configuration
 
-The server configuration includes these network components:
-
-**Server Networking**
-- Server IP: Your VM private IP (assigned by cloud provider)
-- Pod Network: 10.244.0.0/16 (Flannel CNI)
-- Service Network: 10.96.0.0/12 (Kubernetes default)
-
-**Firewall Rules**
-- SSH (22): For remote access
-- HTTP (80): For web applications  
-- HTTPS (443): For secure web traffic
-- Kubernetes API (6443): For cluster communication
-- Jenkins (8080): For CI/CD web interface
-- Kubelet (10250): For Kubernetes node communication
-- Test NGINX (8888): For Docker verification
+**Pod Network** - 10.244.0.0/16 (Flannel CNI)
+**Service Network** - 10.96.0.0/12 (Kubernetes default)
+**Open Ports** - SSH (22), HTTP (80), HTTPS (443), NGINX Test (8888), Jenkins (8080), Kubernetes API (6443), Kubelet (10250), ArgoCD (30080, 30443)
 
 ---
 
