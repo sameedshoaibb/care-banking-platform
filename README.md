@@ -32,11 +32,11 @@ The application and its deployment config.
 
 **Once setup is completed, the automated flow will look like:**
 
-1. **Developer pushes code to GitHub** 
-2. **GitHub triggers Jenkins pipeline via webhook** 
-3. **DevSecOps pipeline executes** - Builds Docker image, runs security tests, pushes to Docker Hub, updates deployment config
-4. **ArgoCD detects configuration changes** - Automatically syncs to Kubernetes cluster
-5. **App is live in ~5 minutes** 
+- **Developer pushes code to GitHub** 
+- **GitHub triggers Jenkins pipeline via webhook** 
+- **DevSecOps pipeline executes** - Builds Docker image, runs security tests, pushes to Docker Hub, updates deployment config
+- **ArgoCD detects configuration changes** - Automatically syncs to Kubernetes cluster
+- **App is live in ~5 minutes** 
 
 **For detailed pipeline setup and configuration**, see the README files in `platform/` and `care-banking-app/` folders.
 
@@ -106,9 +106,13 @@ Start with these README files for in-depth information about each component.
 
 ![Jenkins Pipeline](assets/images/jenkins-pipeline.png)
 
+
+
 **SonarCloud** - Code quality and security analysis.
 
 ![SonarQube](assets/images/sonarqube.png)
+
+
 
 **ArgoCD** - Automatically syncs Git changes to Kubernetes.
 
