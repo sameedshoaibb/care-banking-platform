@@ -114,7 +114,7 @@ Start with these README files for in-depth information about each component.
 _
 
 
-**ArgoCD** - Automatically syncs Git changes to Kubernetes.-
+**ArgoCD** - Automatically syncs Git changes to Kubernetes.
 
 ![ArgoCD](assets/images/argocd.png)
 
