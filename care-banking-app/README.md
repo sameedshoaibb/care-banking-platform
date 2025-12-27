@@ -26,30 +26,6 @@ Node.js/TypeScript banking application with 6 API endpoints. Fully containerized
 - **Non-root execution** - Container runs under appuser for security
 - **pnpm with Corepack** - Faster installs and deterministic package management
 
-## Deployment Options
-
-Preview changes, validate, or generate manifests before deploying:
-```bash
-deploy.sh prod diff       # Preview changes
-deploy.sh prod lint       # Validate Helm chart
-deploy.sh prod template   # Generate manifest
-deploy.sh prod uninstall  # Remove deployment
-```
-
-## Why deploy.sh?
-
-The `deploy.sh` script automates Helm deployments across multiple environments (dev, staging, prod). It:
-- Handles environment-specific configurations automatically
-- Ensures consistent deployments without manual Helm commands
-- Supports diff, lint, template, and uninstall operations
-
-## Build Commands
-
-```bash
-docker build -t care-banking-app:v1.0.0 .
-docker run -dit -p 4000:4000 care-banking-app:v1.0.0
-docker exec -it <container_id> /bin/sh
-```
 ---
 
 ## Getting Started
@@ -82,6 +58,7 @@ deploy.sh prod     # Production
 deploy.sh staging  # Staging
 deploy.sh dev      # Development
 ```
+**Note:** The `deploy.sh` script automates Helm deployments across multiple environments (dev, staging, prod)
 
 ### Step 4: Verify Deployment
 ```bash
@@ -174,13 +151,9 @@ curl -s -H "x-api-key: sameed" http://localhost:8181/admin/accounts
 ```
 **Output:** {"accounts":{"test1":{"id":"test1","password":"pass123","balance":108500,"createdAt":1766782387129,"updatedAt":1766782438669}}}
 
-**Note:** Delete API only works if account balance is zero.
-
 ---
 
 ## Monitoring & Automation
-
-### Nginx Slow Request Logging
 
 ### 1. Nginx Proxy - Slow Request Logging
 
