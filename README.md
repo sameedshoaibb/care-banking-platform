@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A complete DevOps setup that automates building, testing, and deploying a banking app to Kubernetes. Uses GitOps so deployments sync automatically from Git.
+A complete DevOps setup that automates building, testing, and deploying a banking app to Kubernetes. Uses **GitOps** so deployments sync automatically from Git.
 
 ## What's Inside
 
@@ -102,19 +102,18 @@ Start with these README files for in-depth information about each component.
 
 ## CI/CD & Deployment Tools
 
-**Jenkins** - Builds the app, runs security scans, pushes Docker image to Docker Hub, updates deployment config.
+- **Jenkins** - Builds the app, runs security scans, pushes Docker image to Docker Hub, updates deployment config.
 
 ![Jenkins Pipeline](assets/images/jenkins-pipeline.png)
 
 
 
-**SonarCloud** - Code quality and security analysis.
+- **SonarCloud** - Code quality and security analysis.
 
 ![SonarQube](assets/images/sonarqube.png)
 
 
-
-**ArgoCD** - Automatically syncs Git changes to Kubernetes.
+- **ArgoCD** - Automatically syncs Git changes to Kubernetes.
 
 ![ArgoCD](assets/images/argocd.png)
 
