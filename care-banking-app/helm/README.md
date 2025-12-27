@@ -84,7 +84,7 @@ Scheduled balance checking task:
 
 **NetworkPolicy**
 - Implements least privilege access
-- Allows traffic TO pods only from other banking-api pods and DNS (port 53)
+- Allows traffic TO pods only from other care-banking-app pods and DNS (port 53)
 
 **RBAC (Role-Based Access Control)**
 - Pods only have permissions for actions they need
@@ -93,12 +93,7 @@ Scheduled balance checking task:
 ### Auto-scaling
 
 **HPA (Horizontal Pod Autoscaler)**
-- Status: Disabled
-- Reason: Application state is not persistent, so scaling cannot be done reliably without data consistency issues
-
-**VPA (Vertical Pod Autoscaler)**
-- Status: Disabled
-- Reason: Requires installation of additional Custom Resource Definitions (CRDs) in the cluster
+- Horizontally scales app when the cpu increases
 
 ### Ingress
 External routing configuration:
@@ -106,12 +101,6 @@ External routing configuration:
 - **Reason**: Uses port-forward for local testing to avoid requiring sudo access for `/etc/hosts` modification
 
 ## Future Improvements
-
-### Persistent Storage
-Implement **PersistentVolumes (PV) and PersistentVolumeClaims (PVC)** to enable horizontal scaling with data consistency:
-- Store account balances and transaction history persistently
-- Enables Horizontal Pod Autoscaler (HPA) for reliable scaling
-- Current limitation: Application state is in-memory, preventing safe scaling
 
 ### External Secret Management
 Integrate with a cloud-native secrets provider for enhanced security:
@@ -128,23 +117,23 @@ Integrate with a cloud-native secrets provider for enhanced security:
 
 **Production:**
 ```bash
-helm upgrade --install banking-api ./helm -f ./helm/values.prod.yaml
+helm upgrade --install care-banking-app ./helm -f ./helm/values.prod.yaml
 ```
 
 **Staging:**
 ```bash
-helm upgrade --install banking-api ./helm -f ./helm/values.staging.yaml
+helm upgrade --install care-banking-app ./helm -f ./helm/values.staging.yaml
 ```
 
 **Development:**
 ```bash
-helm upgrade --install banking-api ./helm -f ./helm/values.dev.yaml
+helm upgrade --install care-banking-app ./helm -f ./helm/values.dev.yaml
 ```
 
 ### Preview Changes
 
 ```bash
-helm diff upgrade --install banking-api ./helm -f ./helm/values.staging.yaml
+helm diff upgrade --install care-banking-app ./helm -f ./helm/values.staging.yaml
 ```
 
 ### Validate Chart
@@ -156,13 +145,13 @@ helm lint ./helm -f ./helm/values.dev.yaml
 ### Generate Manifests
 
 ```bash
-helm template banking-api ./helm -f ./helm/values.prod.yaml
+helm template care-banking-app ./helm -f ./helm/values.prod.yaml
 ```
 
 ### Remove Release
 
 ```bash
-helm uninstall banking-api
+helm uninstall care-banking-app
 ```
 
 ---
