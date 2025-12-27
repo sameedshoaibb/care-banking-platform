@@ -102,18 +102,19 @@ Start with these README files for in-depth information about each component.
 
 ## CI/CD & Deployment Tools
 
-- **Jenkins** - Builds the app, runs security scans, pushes Docker image to Docker Hub, updates deployment config.
+**Jenkins** - Builds the app, runs security scans, pushes Docker image to Docker Hub, updates deployment config.
 
-![Jenkins Pipeline](assets/images/jenkins-pipeline.png)
+![Jenkins Pipeline](assets/images/jenkins-pipeline.png)_
 
 
 
-- **SonarCloud** - Code quality and security analysis.
+**SonarCloud** - Code quality and security analysis.
 
 ![SonarQube](assets/images/sonarqube.png)
+_
 
 
-- **ArgoCD** - Automatically syncs Git changes to Kubernetes.
+**ArgoCD** - Automatically syncs Git changes to Kubernetes.-
 
 ![ArgoCD](assets/images/argocd.png)
 
