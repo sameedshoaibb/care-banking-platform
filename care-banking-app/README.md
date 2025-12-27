@@ -26,7 +26,12 @@ Node.js/TypeScript banking application with 6 API endpoints. Fully containerized
 - **Non-root execution** - Container runs under appuser for security
 - **pnpm with Corepack** - Faster installs and deterministic package management
 
----
+## Deployment Strategy
+
+The `deploy.sh` script automates **Helm deployments** across multiple environments (dev, staging, prod). It:
+- Handles environment-specific configurations automatically
+- Ensures consistent deployments without manual Helm commands
+- Supports diff, lint, template, and uninstall operations
 
 ## Getting Started
 
@@ -58,7 +63,6 @@ deploy.sh prod     # Production
 deploy.sh staging  # Staging
 deploy.sh dev      # Development
 ```
-**Note:** The `deploy.sh` script automates Helm deployments across multiple environments (dev, staging, prod)
 
 ### Step 4: Verify Deployment
 ```bash
