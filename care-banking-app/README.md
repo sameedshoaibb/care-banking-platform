@@ -1,6 +1,6 @@
 # Care Banking App
 
-Node.js/TypeScript banking application with 6 API endpoints. Fully containerized with Docker, deployed to Kubernetes using Helm, and integrated with Jenkins CI/CD pipeline.
+A real-world banking API built to show how proper architecture works— the app sits behind an API gateway (Nginx in this case) instead of being exposed directly. That's how things work in production.
 
 ## What's Inside
 
@@ -13,13 +13,14 @@ Node.js/TypeScript banking application with 6 API endpoints. Fully containerized
 
 ## API Overview
 
-6 functional endpoints for banking operations:
+It has 6 functional endpoints for banking operations:
 - **User endpoints** - GET account info, POST deposit/withdraw
 - **Admin endpoints** - POST create account, GET/DELETE all accounts
 - **Health check** - GET ping for service verification
 
 ## Docker Optimizations
 
+The best way to optimize dockerfiles are:
 - **smaller image** - Multi-stage build removes build tools and temporary files
 - **Pinned Node.js version** - node:20.19.6-alpine for reproducible builds
 - **Better layer caching** - Dependencies installed before source code
@@ -28,10 +29,7 @@ Node.js/TypeScript banking application with 6 API endpoints. Fully containerized
 
 ## Deployment Strategy
 
-The `deploy.sh` script automates **Helm deployments** across multiple environments (dev, staging, prod). It:
-- Handles environment-specific configurations automatically
-- Ensures consistent deployments without manual Helm commands
-- Supports diff, lint, template, and uninstall operations
+I created `deploy.sh` script to automate **Helm deployments** across multiple environments (dev, staging, prod) to ensure consistent deployments without manual Helm commands. It supports diff, lint, template, and uninstall operations
 
 ## Getting Started
 
