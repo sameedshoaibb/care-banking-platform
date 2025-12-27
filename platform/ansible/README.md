@@ -23,7 +23,6 @@ Automated server setup that installs Docker, Kubernetes, Jenkins, and ArgoCD on 
 **Step 1: Update Configuration**
 Edit `inventory.ini` with your server IP:
 ```ini
-[servers]
 ubuntu-server ansible_host=YOUR_SERVER_IP ansible_user=ubuntu
 ```
 
