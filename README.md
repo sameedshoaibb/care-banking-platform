@@ -30,7 +30,7 @@ The application and its deployment config.
 - Connect ArgoCD to your Git repo
 - Link ArgoCD to Kubernetes cluster
 
-**Once setup is complete, the automated flow:**
+**Once setup is completed, the automated flow will look like:**
 
 1. **Developer pushes code to GitHub** 
 2. **GitHub triggers Jenkins pipeline via webhook** 
@@ -85,12 +85,8 @@ Takes about 10-15 minutes to complete.
 **For detailed instructions:** See `platform/ansible/README.md`
 
 ### Step 4: Deploy the Banking App
-Finish the setup by completing the Prerequisites section above first:
-- Docker Hub account and credentials in Jenkins
-- GitHub webhook for Jenkins
-- ArgoCD linked to your Git repository and Kubernetes cluster
-
-Push code changes to GitHub and it automatically builds and deploys.
+Ensure all Prerequisites (One-time Setup) from the "Project Workflow" section are configured.
+Then push code changes to GitHub and it will automatically build and deploy via the CI/CD pipeline.
 
 **For detailed instructions:** See `care-banking-app/README.md`
 
