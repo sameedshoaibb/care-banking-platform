@@ -13,14 +13,14 @@ A real-world banking API built to show how proper architecture works— the app 
 
 ## API Overview
 
-It has 6 functional endpoints for banking operations:
+Six endpoints handle all banking operations:
 - **User endpoints** - GET account info, POST deposit/withdraw
 - **Admin endpoints** - POST create account, GET/DELETE all accounts
 - **Health check** - GET ping for service verification
 
 ## Docker Optimizations
 
-The best way to optimize dockerfiles are:
+Our Docker image is optimized for performance and security:
 - **smaller image** - Multi-stage build removes build tools and temporary files
 - **Pinned Node.js version** - node:20.19.6-alpine for reproducible builds
 - **Better layer caching** - Dependencies installed before source code
@@ -29,7 +29,7 @@ The best way to optimize dockerfiles are:
 
 ## Deployment Strategy
 
-I created `deploy.sh` script to automate **Helm deployments** across multiple environments (dev, staging, prod) to ensure consistent deployments without manual Helm commands. It supports diff, lint, template, and uninstall operations
+The `deploy.sh` script automates Helm deployments across multiple environments (dev, staging, prod). Instead of manual Helm commands, it handles everything: diffing changes, linting the chart, rendering templates, and executing deployments—keeping configuration consistent across all environments.
 
 ## Getting Started
 
@@ -79,7 +79,7 @@ After deployment, verify resources are running:
 kubectl get all -n care-banking-app
 ```
 
-**Expected Output:**
+**Actual Output:**
 ```
 NAME                                   READY   STATUS    RESTARTS   AGE
 pod/care-banking-app-b645867fb-d4t8z   2/2     Running   0          17m
@@ -109,13 +109,14 @@ job.batch/care-banking-app-balance-check-29446371   1/1           4s         54s
 
 ## API Testing
 
-Test the endpoints using curl (assumes port-forward is running):
+Test the endpoints using curl (make sure port-forward is running):
 
 ### Health Check
 ```bash
 curl -s http://localhost:8181/ping
 ```
-**Note:** We are using nginx reverse proxy to route the request to our backend-api.
+
+All requests route through the Nginx reverse proxy, which sits in front of the API.
 
 ### Create Account (Admin)
 ```bash
