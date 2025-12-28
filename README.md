@@ -2,7 +2,7 @@
 
 ## Purpose
 
-An end-to-end DevOps architecture where CI pipelines build and test the banking application, and **GitOps** ensures secure, auditable, pull-based deployments to Kubernetes by synchronizing cluster state from Git.
+An end-to-end DevOps architecture where CI pipelines build and test the banking application, and **GitOps** approach ensures secure, auditable, pull-based deployments to Kubernetes by synchronizing cluster state from Git.
 
 ## What's Inside
 

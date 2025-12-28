@@ -60,19 +60,6 @@ TASK [Display setup completion] ****
 ok: [sameed] => {
     "msg": "✓ Setup Complete!
     
-Services Running:
-- Jenkins: http://YOUR_SERVER_IP:8080
-- ArgoCD: http://YOUR_SERVER_IP:30080
-- NGINX Test: http://YOUR_SERVER_IP:8888
-
-Credentials:
-- Jenkins Password: [generated-password]
-- ArgoCD Password: [generated-password]
-
-Security Tools:
-- Trivy: trivy image <image-name>
-- Syft: syft <image-name>
-
 Ready for application deployment!"
 }
 
@@ -120,7 +107,9 @@ The playbook creates two users:
 ## Network Configuration
 
 **Pod Network** - 10.244.0.0/16 (Flannel CNI)
+
 **Service Network** - 10.96.0.0/12 (Kubernetes default)
+
 **Open Ports** - SSH (22), HTTP (80), HTTPS (443), NGINX Test (8888), Jenkins (8080), Kubernetes API (6443), Kubelet (10250), ArgoCD (30080, 30443)
 
 ---
