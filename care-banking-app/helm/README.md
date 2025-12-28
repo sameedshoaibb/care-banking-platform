@@ -30,7 +30,6 @@ Deploys the main application with supporting containers:
 - **Security Hardening**: Non-root users, seccomp, dropped capabilities, read-only filesystem for nginx
 - **Health Checks**: Liveness and readiness probes for app container
 - **Resource Configuration**: Limits and requests fully configurable for all containers
-- **Ephemeral Storage**: In-memory volumes for logs, cache, and runtime directories (fast and stateless)
 - **Config Management**: Stored in ConfigMaps and injected cleanly into containers
 - **Pod Priority**: PriorityClass ensures app stays running during node resource pressure
 - **Access Control**: ServiceAccount with RBAC for controlled permissions

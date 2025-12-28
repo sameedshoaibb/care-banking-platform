@@ -2,7 +2,7 @@
 
 ## Purpose
 
-A complete DevOps setup that automates building, testing, and deploying a banking app to Kubernetes. Uses **GitOps** so deployment sync automatically from Git.
+An end-to-end DevOps architecture where CI pipelines build and test the banking application, and **GitOps** ensures secure, auditable, pull-based deployments to Kubernetes by synchronizing cluster state from Git.
 
 ## What's Inside
 
@@ -72,7 +72,7 @@ ansible-playbook -i inventory.ini setup.yml
 ```
 
 This will install and configure the VM:
-- Harden VM with non-root user having sudo priviliges
+- Harden VM with non-root user with sudo privileges
 - Docker container runtime
 - Kubernetes single-node cluster via kubeadm
 - Jenkins CI/CD server

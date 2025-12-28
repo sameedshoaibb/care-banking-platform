@@ -328,23 +328,3 @@
         curl -sSL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
       args:
         creates: /usr/local/bin/syft
-
-    - name: Display setup completion
-      debug:
-        msg: |
-          ✓ Setup Complete!
-          
-          Services Running:
-          - Jenkins: http://{{ ansible_host }}:8080
-          - ArgoCD: http://{{ ansible_host }}:30080
-          - NGINX Test: http://{{ ansible_host }}:8888
-          
-          Credentials:
-          - Jenkins Password: {{ jenkins_password['content'] | b64decode if jenkins_password.content is defined else 'Check Jenkins UI' }}
-          - ArgoCD Password: {{ argocd_password.stdout | default('Check with: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d') }}
-          
-          Security Tools:
-          - Trivy: trivy image <image-name>
-          - Syft: syft <image-name>
-          
-          Ready for application deployment!
