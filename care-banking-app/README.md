@@ -1,6 +1,7 @@
 # Care Banking App
 
-A real-world banking API built to show how proper architecture works— the app sits behind an API gateway (Nginx in this case) instead of being exposed directly. That's how things work in production.
+A Node.js/TypeScript REST API that provides 6 basic banking operations. Nginx is used as a reverse proxy with slow request logging enabled that sends request to the api. A Kubernetes CronJob runs every minute to check for accounts with critically low balance. 
+
 
 ## What's Inside
 
