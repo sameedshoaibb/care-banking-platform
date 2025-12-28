@@ -101,6 +101,8 @@ spec:
               mountPath: /mnt/config-template
             - name: app-config
               mountPath: /config
+            - name: app-data
+              mountPath: /app/data
 
         - name: nginx-proxy
           image: {{ .Values.nginx.image }}:{{ .Values.nginx.imageTag }}
@@ -130,14 +132,9 @@ spec:
             - name: nginx-config
               mountPath: /etc/nginx/nginx.conf
               subPath: nginx.conf
-            - name: nginx-cache
-              mountPath: /var/cache/nginx
-            - name: nginx-run
-              mountPath: /var/run
-            - name: nginx-logs
-              mountPath: /var/log/nginx
-            - name: nginx-conf-d
-              mountPath: /etc/nginx/conf.d
+            - name: app-data
+              mountPath: /app/data
+              readOnly: true
       volumes:
         - name: config-template
           configMap:
@@ -148,11 +145,6 @@ spec:
         - name: nginx-config
           configMap:
             name: {{ .Values.app.name }}-nginx
-        - name: nginx-cache
-          emptyDir: {}
-        - name: nginx-run
-          emptyDir: {}
-        - name: nginx-logs
-          emptyDir: {}
-        - name: nginx-conf-d
-          emptyDir: {}
+        - name: app-data
+          persistentVolumeClaim:
+            claimName: {{ .Values.app.name }}-pvc

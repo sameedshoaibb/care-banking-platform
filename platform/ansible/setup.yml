@@ -8,9 +8,7 @@
   gather_facts: true
 
   tasks:
-    # ========================================
     # System Preparation
-    # ========================================
     - name: Update system packages
       apt:
         update_cache: yes
@@ -28,9 +26,6 @@
           - python3-pip
         state: present
 
-    # ========================================
-    # User Setup
-    # ========================================
     - name: Create devops user with sudo access
       user:
         name: "{{ devops_user }}"
@@ -53,9 +48,6 @@
         mode: '0440'
         validate: 'visudo -cf %s'
 
-    # ========================================
-    # Docker Installation
-    # ========================================
     - name: Add Docker GPG key
       apt_key:
         url: https://download.docker.com/linux/ubuntu/gpg
@@ -85,9 +77,6 @@
         state: started
         enabled: yes
 
-    # ========================================
-    # Kubernetes Tools
-    # ========================================
     - name: Add Kubernetes GPG key
       apt_key:
         url: https://pkgs.k8s.io/core:/stable:/v1.28/deb/Release.key
@@ -111,18 +100,12 @@
         selection: hold
       loop: [kubelet, kubeadm, kubectl]
 
-    # ========================================
-    # Helm Package Manager
-    # ========================================
     - name: Install Helm
       shell: |
         curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
       args:
         creates: /usr/local/bin/helm
 
-    # ========================================
-    # Jenkins Setup
-    # ========================================
     - name: Add Jenkins GPG key
       apt_key:
         url: https://pkg.jenkins.io/debian-stable/jenkins.io-2023.key
@@ -174,9 +157,6 @@
           Jenkins URL: http://{{ ansible_host }}:8080
       when: jenkins_password.content is defined
 
-    # ========================================
-    # Jenkins Kubernetes Access
-    # ========================================
     - name: Grant jenkins sudo privileges
       lineinfile:
         path: /etc/sudoers.d/jenkins
@@ -193,9 +173,6 @@
         group: jenkins
         mode: '0755'
 
-    # ========================================
-    # Firewall Configuration
-    # ========================================
     - name: Install UFW firewall
       apt:
         name: ufw
@@ -212,9 +189,6 @@
       ufw:
         state: enabled
 
-    # ========================================
-    # Kubernetes Preparation
-    # ========================================
     - name: Disable swap for Kubernetes
       command: swapoff -a
       when: ansible_swaptotal_mb > 0
@@ -225,9 +199,6 @@
         regexp: '^\s*([^#\s]+\s+){1}(none|swap)\s+'
         state: absent
 
-    # ========================================
-    # Docker Verification
-    # ========================================
     - name: Pull and run NGINX test container
       docker_container:
         name: nginx-test
@@ -243,9 +214,6 @@
       retries: 3
       delay: 5
 
-    # ========================================
-    # Kubernetes Cluster Init
-    # ========================================
     - name: Copy k8s initialization script
       copy:
         src: scripts/install-k8s.sh
@@ -266,9 +234,6 @@
         remote_src: yes
       ignore_errors: yes
 
-    # ========================================
-    # ArgoCD Installation
-    # ========================================
     - name: Wait for Kubernetes cluster to be ready
       shell: kubectl get nodes --no-headers=true | grep -q "Ready"
       register: cluster_ready
@@ -342,9 +307,6 @@
         proto: tcp
       loop: [30080, 30443]
 
-    # ========================================
-    # Security Scanning Tools
-    # ========================================
     - name: Add Trivy GPG key
       apt_key:
         url: https://aquasecurity.github.io/trivy-repo/deb/public.key
@@ -366,26 +328,3 @@
         curl -sSL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
       args:
         creates: /usr/local/bin/syft
-
-    # ========================================
-    # Setup Summary
-    # ========================================
-    - name: Display setup completion
-      debug:
-        msg: |
-          ✓ Setup Complete!
-          
-          Services Running:
-          - Jenkins: http://{{ ansible_host }}:8080
-          - ArgoCD: http://{{ ansible_host }}:30080
-          - NGINX Test: http://{{ ansible_host }}:8888
-          
-          Credentials:
-          - Jenkins Password: {{ jenkins_password['content'] | b64decode if jenkins_password.content is defined else 'Check Jenkins UI' }}
-          - ArgoCD Password: {{ argocd_password.stdout | default('Check with: kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d') }}
-          
-          Security Tools:
-          - Trivy: trivy image <image-name>
-          - Syft: syft <image-name>
-          
-          Ready for application deployment!

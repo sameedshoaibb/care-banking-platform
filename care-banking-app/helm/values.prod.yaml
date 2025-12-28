@@ -3,7 +3,7 @@
 replicaCount: 1
 
 app:
-  imageTag: v1.0.7
+  imageTag: v1.0.10
   resources:
     requests:
       cpu: "250m"
