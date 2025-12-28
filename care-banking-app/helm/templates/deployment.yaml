@@ -107,7 +107,7 @@ spec:
           imagePullPolicy: {{ .Values.nginx.imagePullPolicy }}
           securityContext:
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: true
+            readOnlyRootFilesystem: false
             runAsNonRoot: true
             runAsUser: 101
             capabilities:
