@@ -120,36 +120,27 @@ pipeline {
                 sh '''
                     mkdir -p security-reports
                     
-                    echo "=========================================="
                     echo "1. TRIVY IMAGE SCAN"
-                    echo "=========================================="
                     trivy image --severity HIGH,CRITICAL \
                         --format json --output security-reports/trivy-image-report.json \
                         --format table ${IMAGE_NAME}:${IMAGE_TAG} | tee security-reports/trivy-image-report.txt
                     
                     cat security-reports/trivy-image-report.txt
-                    echo "=========================================="
                     
                     echo ""
-                    echo "=========================================="
                     echo "2. TRIVY FILESYSTEM SCAN"
-                    echo "=========================================="
                     trivy fs --severity HIGH,CRITICAL \
                         --format json --output security-reports/trivy-fs-report.json \
                         --format table . | tee security-reports/trivy-fs-report.txt
                     
                     cat security-reports/trivy-fs-report.txt
-                    echo "=========================================="
                     
                     echo ""
-                    echo "=========================================="
                     echo "3. TRIVY CONFIG SCAN (Kubernetes & Cloud)"
-                    echo "=========================================="
                     trivy config --severity HIGH,CRITICAL \
                         --format json --output security-reports/trivy-config-report.json \
                         --format table care-banking-app/helm 2>/dev/null | tee security-reports/trivy-config-report.txt || echo "No config files found or scan skipped"
                     
-                    echo "=========================================="
                 '''
             }
         }
@@ -161,11 +152,8 @@ pipeline {
                     syft ${IMAGE_NAME}:${IMAGE_TAG} --output cyclonedx-json > security-reports/sbom-cyclonedx.json
                     syft ${IMAGE_NAME}:${IMAGE_TAG} --output table > security-reports/sbom-report.txt
                     
-                    echo "=========================================="
                     echo "SOFTWARE BILL OF MATERIALS (SBOM)"
-                    echo "=========================================="
                     cat security-reports/sbom-report.txt
-                    echo "=========================================="
                 '''
             }
         }
@@ -173,9 +161,7 @@ pipeline {
         stage('Scan Dependencies') {
             steps {
                 sh '''
-                    echo "=========================================="
                     echo "DEPENDENCY VULNERABILITY SCAN"
-                    echo "=========================================="
                     
                     # Scan package.json for npm vulnerabilities
                     if [ -f "care-banking-app/package.json" ]; then
@@ -185,12 +171,9 @@ pipeline {
                         npm audit --audit-level=moderate 2>&1 | tee ../security-reports/npm-audit.txt || true
                         cd ..
                         
-                        echo "=========================================="
-                        echo "NPM AUDIT REPORT"
-                        echo "=========================================="
-                        cat security-reports/npm-audit.txt
-                        echo "=========================================="
-                    fi
+                            echo "NPM AUDIT REPORT"
+                            cat security-reports/npm-audit.txt
+                        fi
                 '''
             }
         }
