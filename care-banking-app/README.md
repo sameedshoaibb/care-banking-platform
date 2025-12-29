@@ -30,7 +30,7 @@ Our Docker image is optimized for performance and security:
 
 ## Deployment Strategy
 
-The `deploy.sh` script automates Helm deployments across multiple environments (dev, staging, prod). Instead of manual Helm commands, it handles everything: diffing changes, linting the chart, rendering templates, and executing deployments—keeping configuration consistent across all environments.
+The `deploy.sh` script automates Helm deployments across multiple environments (dev, staging, prod). Instead of manual Helm commands, it handles everything: diff changes, linting the chart, rendering templates, and executing deployments,keeping configuration consistent across all environments.
 
 ## Getting Started
 
@@ -187,10 +187,6 @@ kubectl logs -n care-banking-app -l job-type=cronjob --tail=10
 [2025-12-26 20:55:00] Starting balance check (threshold: -10000)
 OK: No accounts found with critically low balance
 [2025-12-26 20:52:00] Starting balance check (threshold: -10000)
-OK: No accounts found with critically low balance
-[2025-12-26 20:53:00] Starting balance check (threshold: -10000)
-OK: No accounts found with critically low balance
-[2025-12-26 20:54:00] Starting balance check (threshold: -10000)
 OK: No accounts found with critically low balance
 ```
 
