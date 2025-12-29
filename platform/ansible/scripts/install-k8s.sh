@@ -13,12 +13,6 @@ if [ -f /etc/kubernetes/admin.conf ]; then
     exit 0
 fi
 
-# Configure containerd
-mkdir -p /etc/containerd
-containerd config default > /etc/containerd/config.toml
-sed -i 's/SystemdCgroup = false/SystemdCgroup = true/' /etc/containerd/config.toml
-systemctl restart containerd
-
 # Load kernel modules
 modprobe overlay
 modprobe br_netfilter
@@ -35,14 +29,6 @@ kubeadm init --pod-network-cidr=10.244.0.0/16 --apiserver-advertise-address=$PRI
 # Setup kubectl access
 mkdir -p /root/.kube
 cp /etc/kubernetes/admin.conf /root/.kube/config
-
-# Setup kubectl for sudo user if exists
-if [ -n "$SUDO_USER" ]; then
-    USER_HOME=$(getent passwd "$SUDO_USER" | cut -d: -f6)
-    mkdir -p "$USER_HOME/.kube"
-    cp /etc/kubernetes/admin.conf "$USER_HOME/.kube/config"
-    chown -R "$SUDO_USER:$SUDO_USER" "$USER_HOME/.kube"
-fi
 
 # Setup kubectl for devops user
 id "devops" &>/dev/null && {

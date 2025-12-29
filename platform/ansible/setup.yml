@@ -46,7 +46,6 @@
         line: "{{ devops_user }} ALL=(ALL) NOPASSWD:ALL"
         create: yes
         mode: '0440'
-        validate: 'visudo -cf %s'
 
     - name: Add Docker GPG key
       apt_key:
@@ -163,7 +162,6 @@
         line: "jenkins ALL=(ALL) NOPASSWD:ALL"
         create: yes
         mode: '0440'
-        validate: 'visudo -cf %s'
 
     - name: Setup kubeconfig for jenkins
       file:
