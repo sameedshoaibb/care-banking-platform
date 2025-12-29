@@ -138,14 +138,10 @@ care-banking-platform/
 │   │   ├── providers.tf
 │   │   ├── variables.tf
 │   │   ├── outputs.tf
-│   │   ├── secrets.tfvars
-│   │   ├── terraform.tfstate
-│   │   ├── terraform.tfstate.backup
 │   │   └── modules/
 │   │       ├── azure-resource-group/
 │   │       ├── azure-vnet/
-│   │       ├── azure-vm/
-│   │       └── azure-monitoring/
+│   │       └── azure-vm/
 │   │
 │   └── ansible/                      ← Then here: Configures the VM
 │       ├── README.md
