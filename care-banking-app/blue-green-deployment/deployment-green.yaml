@@ -1,0 +1,165 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.app.name }}-green
+  labels:
+    app: {{ .Values.app.name }}
+    slot: green
+    version: "{{ .Values.green.version }}"
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Values.app.name }}
+      slot: green
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.app.name }}
+        slot: green
+        version: "{{ .Values.green.version }}"
+    spec:
+      serviceAccountName: {{ .Values.app.name }}
+      priorityClassName: {{ .Values.app.name }}-critical
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 2000
+        seccompProfile:
+          type: RuntimeDefault
+      initContainers:
+        - name: config-init
+          image: {{ .Values.initContainer.image }}
+          command: ['sh', '-c']
+          args:
+            - |
+              sed "s|\${ADMIN_API_KEY}|${ADMIN_API_KEY}|g" /mnt/config-template/config.json > /config/config.json
+              chmod 444 /config/config.json
+          env:
+            - name: ADMIN_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: care-banking-app-key
+                  key: adminApiKey
+          resources:
+            requests:
+              cpu: {{ .Values.initContainer.resources.requests.cpu }}
+              memory: {{ .Values.initContainer.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.initContainer.resources.limits.cpu }}
+              memory: {{ .Values.initContainer.resources.limits.memory }}
+          volumeMounts:
+            - name: config-template
+              mountPath: /mnt/config-template
+            - name: app-config
+              mountPath: /config
+      containers:
+        - name: care-banking-app
+          image: {{ .Values.app.image }}:{{ .Values.green.imageTag }}
+          imagePullPolicy: {{ .Values.app.imagePullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            runAsUser: 1000
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - name: app-port
+              containerPort: {{ .Values.app.port }}
+              protocol: TCP
+          env:
+            - name: CONFIG_FILE
+              value: /config/config.json
+            - name: MEMORY_LIMIT
+              valueFrom:
+                resourceFieldRef:
+                  resource: limits.memory
+          livenessProbe:
+            httpGet:
+              path: {{ .Values.app.livenessProbe.path }}
+              port: app-port
+            initialDelaySeconds: {{ .Values.app.livenessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.app.livenessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.app.livenessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.app.livenessProbe.failureThreshold }}
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.app.readinessProbe.path }}
+              port: app-port
+            initialDelaySeconds: {{ .Values.app.readinessProbe.initialDelaySeconds }}
+            periodSeconds: {{ .Values.app.readinessProbe.periodSeconds }}
+            timeoutSeconds: {{ .Values.app.readinessProbe.timeoutSeconds }}
+            failureThreshold: {{ .Values.app.readinessProbe.failureThreshold }}
+          resources:
+            requests:
+              cpu: {{ .Values.app.resources.requests.cpu }}
+              memory: {{ .Values.app.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.app.resources.limits.cpu }}
+              memory: {{ .Values.app.resources.limits.memory }}
+          volumeMounts:
+            - name: config-template
+              mountPath: /mnt/config-template
+            - name: app-config
+              mountPath: /config
+            - name: app-data
+              mountPath: /app/data
+
+        - name: nginx-proxy
+          image: {{ .Values.nginx.image }}:{{ .Values.nginx.imageTag }}
+          imagePullPolicy: {{ .Values.nginx.imagePullPolicy }}
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            runAsNonRoot: true
+            runAsUser: 101
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - NET_BIND_SERVICE
+          ports:
+            - name: http
+              containerPort: 80
+              protocol: TCP
+          resources:
+            requests:
+              cpu: {{ .Values.nginx.resources.requests.cpu }}
+              memory: {{ .Values.nginx.resources.requests.memory }}
+            limits:
+              cpu: {{ .Values.nginx.resources.limits.cpu }}
+              memory: {{ .Values.nginx.resources.limits.memory }}
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf
+            - name: nginx-cache
+              mountPath: /var/cache/nginx
+            - name: nginx-var-run
+              mountPath: /var/run
+            - name: nginx-logs
+              mountPath: /var/log/nginx
+            - name: app-data
+              mountPath: /app/data
+              readOnly: true
+      volumes:
+        - name: config-template
+          configMap:
+            name: {{ .Values.app.name }}-config-template
+            defaultMode: 0444
+        - name: app-config
+          emptyDir: {}
+        - name: nginx-config
+          configMap:
+            name: {{ .Values.app.name }}-nginx
+        - name: nginx-cache
+          emptyDir: {}
+        - name: nginx-var-run
+          emptyDir: {}
+        - name: nginx-logs
+          emptyDir: {}
+        - name: app-data
+          persistentVolumeClaim:
+            claimName: {{ .Values.app.name }}-pvc
