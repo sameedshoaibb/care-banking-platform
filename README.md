@@ -2,7 +2,7 @@
 
 ## Purpose
 
-An end-to-end DevOps architecture where CI pipelines build and test the banking application, and **GitOps** approach ensures secure, auditable, pull-based deployments to Kubernetes by synchronizing cluster state from Git.
+An end-to-end DevOps platform where CI pipeline build and test the banking application, and **GitOps** approach ensures secure, auditable, pull-based deployments to Kubernetes by synchronizing cluster state from Git.
 
 ## What's Inside
 
@@ -17,8 +17,8 @@ The application and its deployment config.
 
 - **Source code** - Node.js/TypeScript app with 6 endpoints for account management
 - **Helm charts** - Kubernetes manifests for dev, staging, and prod environments
-- **Dockerfile** - Multi-stage build with security hardening
-- **Jenkinsfile** - 13-stage CI/CD pipeline with security scans
+- **Dockerfile** - Multi stage build with security hardening
+- **Jenkinsfile** - 13 stage CI/CD pipeline with security scans
 
 ## Project Workflow
 
